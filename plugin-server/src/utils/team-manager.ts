@@ -9,13 +9,13 @@ type RawTeam = Omit<Team, 'availableFeatures'> & {
     available_product_features: { key: string; name: string }[]
 }
 
-export class TeamManagerLazy {
+export class TeamManager {
     private lazyLoader: LazyLoader<Team>
 
     constructor(private postgres: PostgresRouter) {
         this.lazyLoader = new LazyLoader({
             name: 'TeamManager',
-            refreshAge: 2 * 60 * 1000, // 2 minutes
+            refreshAge: 2 * 60 * 1000, // 2 minute
             refreshJitterMs: 30 * 1000, // 30 seconds
             loader: async (teamIdOrTokens: string[]) => {
                 return await this.fetchTeams(teamIdOrTokens)
@@ -41,16 +41,7 @@ export class TeamManagerLazy {
 
     public async hasAvailableFeature(teamId: number, feature: string): Promise<boolean> {
         const team = await this.getTeam(teamId)
-        return team?.available_features?.includes(feature) || false
-    }
-
-    public orgAvailableFeaturesChanged(organizationId: string): void {
-        // Find all teams with that org id and invalidate their cache
-        Object.entries(this.lazyLoader.cache).forEach(([key, value]) => {
-            if (value?.organization_id === organizationId) {
-                this.lazyLoader.markForRefresh(key)
-            }
-        })
+        return team?.available_features.includes(feature) || false
     }
 
     public async setTeamIngestedEvent(team: Team, properties: Properties): Promise<void> {
@@ -153,7 +144,7 @@ export class TeamManagerLazy {
         // Fill in actual teams where they exist
         result.rows.forEach((row) => {
             const { available_product_features, ...teamPartial } = row
-            const team = {
+            const team: Team = {
                 ...teamPartial,
                 // NOTE: The postgres lib loads the bigint as a string, so we need to cast it to a ProjectId
                 project_id: Number(teamPartial.project_id) as ProjectId,
