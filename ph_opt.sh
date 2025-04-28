@@ -211,7 +211,7 @@ parse_args() {
 # 主程序
 main() {
     export DEBIAN_FRONTEND=noninteractive
-    composeDir="${HOME}/deploy-compose"
+    composeDir="${HOME}/posthog_deploy/deploy-compose"
 
     parse_args "$@"
     setup_env
