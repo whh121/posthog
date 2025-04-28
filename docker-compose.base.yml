@@ -230,6 +230,7 @@ services:
         command: ./bin/plugin-server --no-restart-loop
         restart: on-failure
         environment:
+            CYCLOTRON_DATABASE_URL: 'postgres://posthog:posthog@db:5432/cyclotron'
             DATABASE_URL: 'postgres://posthog:posthog@db:5432/posthog'
             KAFKA_HOSTS: 'kafka:9092'
             REDIS_URL: 'redis://redis:6379/'

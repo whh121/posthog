@@ -47,6 +47,8 @@ import { populatePluginCapabilities } from './worker/vm/lazy'
 CompressionCodecs[CompressionTypes.Snappy] = SnappyCodec
 CompressionCodecs[CompressionTypes.LZ4] = new LZ4().codec
 
+const { version } = require('../../package.json')
+
 const pluginServerStartupTimeMs = new Counter({
     name: 'plugin_server_startup_time_ms',
     help: 'Time taken to start the plugin server, in milliseconds',
@@ -297,6 +299,10 @@ export class PluginServer {
 
             await this.pubsub.start()
 
+            if (capabilities.preflightSchedules) {
+                startPreflightSchedules(hub)
+            }
+
             setupCommonRoutes(this.expressApp, this.services)
 
             if (!isTestEnv()) {
@@ -381,4 +387,18 @@ export class PluginServer {
 
         process.exit(error ? 1 : 0)
     }
+}
+
+// add by wuhaitao https://github.com/PostHog/posthog/issues/29706
+const startPreflightSchedules = (hub: Hub) => {
+    // These are used by the preflight checks in the Django app to determine if
+    // the plugin-server is running.
+    schedule.scheduleJob('*/5 * * * * *', async () => {
+        await hub.db.redisSet('@posthog-plugin-server/ping', new Date().toISOString(), 'preflightSchedules', 60, {
+            jsonSerialize: false,
+        })
+        await hub.db.redisSet('@posthog-plugin-server/version', version, 'preflightSchedules', undefined, {
+            jsonSerialize: false,
+        })
+    })
 }
