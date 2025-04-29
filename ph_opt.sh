@@ -3,6 +3,7 @@ set -e
 
 check_and_init() {
     # 1 init env
+    cd ${composeDir}
     if [ "$REGISTRY_URL" == "" ]
     then
         export REGISTRY_URL="posthog/posthog"
@@ -10,7 +11,7 @@ check_and_init() {
 
     export POSTHOG_APP_TAG="${POSTHOG_APP_TAG:-latest}"
 
-    echo "Checking for named postgres and clickhouse volumes to avoid data loss when upgrading from < 1.39"
+    echo "1. Checking for named postgres and clickhouse volumes to avoid data loss when upgrading from < 1.39"
     if docker volume ls | grep -Pzoq 'clickhouse-data\n(.|\n)*postgres-data\n'
     then
         DOCKER_VOLUMES_MISSING=FALSE
@@ -47,8 +48,9 @@ check_and_init() {
         fi
     fi
 
-    [[ -f ".env" ]] && export $(cat .env | xargs) || ( echo "No .env file found. Please create it with POSTHOG_SECRET and DOMAIN set." && exit 1)
 
+    [[ -f ".env" ]] && export $(cat .env | xargs) || ( echo "No .env file found. Please create it with POSTHOG_SECRET and DOMAIN set." && exit 1)
+    echo "2. .env file found, checking ENCRYPTION_SALT_KEYS"
     # we introduced ENCRYPTION_SALT_KEYS and so if there isn't one, need to add it
     # check for it in the .env file
     if ! grep -q "ENCRYPTION_SALT_KEYS" .env; then
@@ -70,11 +72,8 @@ check_and_init() {
     fi
 
     export POSTHOG_APP_TAG="${POSTHOG_APP_TAG:-latest-release}"
-
-    curDir=`pwd`
-
-    cd $composeDir
-
+    
+    echo "3. init docker-compose.yml" 
     rm -f docker-compose.yml
     cp ${curDir}/docker-compose.base.yml docker-compose.base.yml
     cp ${curDir}/docker-compose-dev.yml docker-compose.yml.tmpl
@@ -84,6 +83,7 @@ check_and_init() {
     # rewrite entrypoint
     # TODO: this is duplicated from bin/deploy-hobby. We should refactor this into a
     # single script.
+    echo "4. init compose/start"
     cat > compose/start <<EOF
 #!/bin/bash
 /compose/wait
@@ -211,11 +211,11 @@ parse_args() {
 # 主程序
 main() {
     export DEBIAN_FRONTEND=noninteractive
+    
+    curDir=`pwd`
     composeDir="${HOME}/posthog_deploy/deploy-compose"
 
     parse_args "$@"
-    setup_env
-    check_files
     
     case $COMMAND in
         "init")

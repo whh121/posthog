@@ -4,8 +4,8 @@
 set -e
 
 curDir=`pwd`
-POSTHOG_DIR="${curDir}/posthog"
-composeDir="${HOME}/posthog_deploy/deploy-compose"
+POSTHOG_DIR="${curDir}"
+composeDir="${POSTHOG_DIR}/../"
 
 export DEBIAN_FRONTEND=noninteractive
 # Automatically restart without asking.
@@ -65,6 +65,12 @@ echo "Thanks! 🙏"
 echo ""
 echo "Ok! We'll take it from here 🚀"
 
+if [ ! -d "$composeDir" ]; then
+    echo "创建目录: $composeDir"
+    mkdir -p "$composeDir"
+fi
+cd ${composeDir}
+
 echo "Making sure any stack that might exist is stopped"
 sudo -E docker-compose -f docker-compose.yml stop &> /dev/null || true
 
@@ -88,7 +94,6 @@ sudo apt update
 # git clone https://github.com/PostHog/posthog.git &> /dev/null || true
 # cd posthog
 
-cd ${composeDir}
 
 # if [[ "$POSTHOG_APP_TAG" = "latest-release" ]]
 # then

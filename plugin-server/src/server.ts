@@ -46,7 +46,8 @@ import { initPlugins as _initPlugins } from './worker/tasks'
 CompressionCodecs[CompressionTypes.Snappy] = SnappyCodec
 CompressionCodecs[CompressionTypes.LZ4] = new LZ4().codec
 
-const { version } = require('../../package.json')
+const path = require('path')
+const { version } = require(path.resolve(__dirname, '../package.json'))
 
 const pluginServerStartupTimeMs = new Counter({
     name: 'plugin_server_startup_time_ms',
