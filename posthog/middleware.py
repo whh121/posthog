@@ -457,6 +457,8 @@ class CaptureMiddleware:
         if request.path in (
             "/e",
             "/e/",
+            "/i/v0/e",
+            "/i/v0/e/",
             "/s",
             "/s/",
             "/track",
