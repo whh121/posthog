@@ -28,6 +28,10 @@ import { Layout } from 'react-grid-layout'
 import { BehavioralFilterKey, BehavioralFilterType } from 'scenes/cohorts/CohortFilters/types'
 import { BreakdownColorConfig } from 'scenes/dashboard/DashboardInsightColorsModal'
 import { Holdout } from 'scenes/experiments/holdoutsLogic'
+import {
+    ConversionRateInputType,
+    EventConfig,
+} from 'scenes/experiments/RunningTimeCalculator/runningTimeCalculatorLogic'
 import { AggregationAxisFormat } from 'scenes/insights/aggregationAxisFormat'
 import { JSONContent } from 'scenes/notebooks/Notebook/utils'
 import { Params, Scene, SceneConfig } from 'scenes/sceneTypes'
@@ -36,6 +40,7 @@ import { WEB_SAFE_FONTS } from 'scenes/surveys/constants'
 import type {
     DashboardFilter,
     DatabaseSchemaField,
+    ErrorTrackingIssueAssignee,
     ExperimentExposureCriteria,
     ExperimentFunnelsQuery,
     ExperimentMetric,
@@ -651,6 +656,7 @@ export interface ActionType {
     bytecode?: any[]
     bytecode_error?: string
     pinned_at: string | null
+    _create_in_folder?: string | null
 }
 
 /** Sync with plugin-server/src/types.ts */
@@ -715,13 +721,8 @@ export interface ToolbarProps extends ToolbarParams {
 
 export type PathCleaningFilter = { alias?: string; regex?: string }
 
-export type PropertyFilterValue =
-    | string
-    | number
-    | bigint
-    | (string | number | bigint)[]
-    // | ErrorTrackingIssueAssignee - TODO - @david
-    | null
+export type PropertyFilterBaseValue = string | number | bigint | ErrorTrackingIssueAssignee
+export type PropertyFilterValue = PropertyFilterBaseValue | PropertyFilterBaseValue[] | null
 
 /** Sync with plugin-server/src/types.ts */
 export enum PropertyOperator {
@@ -1100,6 +1101,7 @@ export enum SessionRecordingUsageType {
 
 export enum SessionRecordingSidebarTab {
     OVERVIEW = 'overview',
+    SESSION_SUMMARY = 'ai-summary',
     INSPECTOR = 'inspector',
     DEBUGGER = 'debugger',
     NETWORK_WATERFALL = 'network-waterfall',
@@ -1413,6 +1415,7 @@ export interface CohortType {
         properties: CohortCriteriaGroupFilter
     }
     experiment_set?: number[]
+    _create_in_folder?: string | null
 }
 
 export interface InsightHistory {
@@ -1986,6 +1989,8 @@ export interface InsightModel extends Cacheable, WithAccessControl {
     filters: Partial<FilterType>
     query?: Node | null
     query_status?: QueryStatus
+    /** Only used when creating objects */
+    _create_in_folder?: string | null
 }
 
 export interface QueryBasedInsightModel extends Omit<InsightModel, 'filters'> {
@@ -3461,6 +3466,8 @@ export enum PropertyType {
     Duration = 'Duration',
     Selector = 'Selector',
     Cohort = 'Cohort',
+    Assignee = 'Assignee',
+    StringArray = 'StringArray',
 }
 
 export enum PropertyDefinitionType {
@@ -3471,7 +3478,7 @@ export enum PropertyDefinitionType {
     Session = 'session',
     LogEntry = 'log_entry',
     Meta = 'meta',
-    // Resource = 'resource', - TODO @david
+    Resource = 'resource',
 }
 
 export interface PropertyDefinition {
@@ -3546,9 +3553,17 @@ export interface Experiment {
     saved_metrics_ids: { id: number; metadata: { type: 'primary' | 'secondary' } }[]
     saved_metrics: any[]
     parameters: {
+        /**
+         * This is the state of the Running Time Calculator modal, while
+         * minimum_detectable_effect, recommended_running_time, and recommended_sample_size
+         * are the results of the Running Time Calculator.
+         */
         exposure_estimate_config?: {
-            event: string
-            properties: AnyPropertyFilter[]
+            eventFilter: EventConfig | null
+            metric: ExperimentMetric | null
+            conversionRateInputType: ConversionRateInputType
+            manualConversionRate: number | null
+            uniqueUsers: number | null
         } | null
         minimum_detectable_effect?: number
         recommended_running_time?: number
@@ -4253,6 +4268,7 @@ export enum ActivityScope {
     COHORT = 'Cohort',
     TEAM = 'Team',
     ERROR_TRACKING_ISSUE = 'ErrorTrackingIssue',
+    DATA_WAREHOUSE_SAVED_QUERY = 'DataWarehouseSavedQuery',
 }
 
 export type CommentType = {
@@ -4276,6 +4292,7 @@ export type NotebookListItemType = {
     created_by: UserBasicType | null
     last_modified_at?: string
     last_modified_by?: UserBasicType | null
+    _create_in_folder?: string
 }
 
 export type NotebookType = NotebookListItemType &
