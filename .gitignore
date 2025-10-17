@@ -118,3 +118,4 @@ bin/mprocs*.local.yaml
 
 # Debug output of our session summaries product
 .session-summaries
+ter
