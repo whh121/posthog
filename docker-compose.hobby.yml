@@ -40,18 +40,23 @@ services:
         extends:
             file: docker-compose.base.yml
             service: clickhouse
+        ports:
+            - '8123:8123'
+            - '9000:9000'
+            - '9440:9440'
+            - '9009:9009'
         restart: on-failure
         depends_on:
             - kafka
             - zookeeper
         volumes:
-            - ./posthog/posthog/idl:/idl
-            - ./posthog/docker/clickhouse/docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d
-            - ./posthog/docker/clickhouse/config.xml:/etc/clickhouse-server/config.xml
-            - ./posthog/docker/clickhouse/config.d/default.xml:/etc/clickhouse-server/config.d/default.xml
-            - ./posthog/docker/clickhouse/users.xml:/etc/clickhouse-server/users.xml
-            - ./posthog/docker/clickhouse/user_defined_function.xml:/etc/clickhouse-server/user_defined_function.xml
-            - ./posthog/posthog/user_scripts:/var/lib/clickhouse/user_scripts
+            - ../posthog/posthog/idl:/idl
+            - ../posthog/docker/clickhouse/docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d
+            - ../posthog/docker/clickhouse/config.xml:/etc/clickhouse-server/config.xml
+            - ../posthog/docker/clickhouse/config.d/default.xml:/etc/clickhouse-server/config.d/default.xml
+            - ../posthog/docker/clickhouse/users.xml:/etc/clickhouse-server/users.xml
+            - ../posthog/docker/clickhouse/user_defined_function.xml:/etc/clickhouse-server/user_defined_function.xml
+            - ../posthog/posthog/user_scripts:/var/lib/clickhouse/user_scripts
             - clickhouse-data:/var/lib/clickhouse
 
     zookeeper:
@@ -72,6 +77,7 @@ services:
             KAFKA_LOG_RETENTION_MS: 3600000
             KAFKA_LOG_RETENTION_CHECK_INTERVAL_MS: 300000
             KAFKA_LOG_RETENTION_HOURS: 1
+            KAFKA_LOG_SEGMENT_BYTES: 268435456
         volumes:
             - kafka-data:/bitnami/kafka
 
@@ -93,6 +99,9 @@ services:
         extends:
             file: docker-compose.base.yml
             service: web
+        ports:
+            - "8001:8001"  # 添加 Prometheus 指标端口映射
+            - "8000:8000"  # 暴露该端口用于支持https
         command: /compose/start
         volumes:
             - ./compose:/compose
