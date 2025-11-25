@@ -11,10 +11,10 @@ import { LemonTab, LemonTabs } from 'lib/lemon-ui/LemonTabs'
 import { IconSlack, IconTwilio } from 'lib/lemon-ui/icons'
 import { capitalizeFirstLetter } from 'lib/utils'
 import { Scene, SceneExport } from 'scenes/sceneTypes'
+import { sceneConfigurations } from 'scenes/scenes'
 import { urls } from 'scenes/urls'
 
 import { SceneContent } from '~/layout/scenes/components/SceneContent'
-import { SceneDivider } from '~/layout/scenes/components/SceneDivider'
 import { SceneTitleSection } from '~/layout/scenes/components/SceneTitleSection'
 import { Breadcrumb } from '~/types'
 
@@ -142,7 +142,7 @@ export function WorkflowsScene(): JSX.Element {
             key: 'workflows',
             content: (
                 <>
-                    <p>Create automated workflows workflows triggered by events</p>
+                    <p>Create and manage your workflows</p>
                     <WorkflowsTable />
                 </>
             ),
@@ -176,8 +176,9 @@ export function WorkflowsScene(): JSX.Element {
     return (
         <SceneContent className="workflows">
             <SceneTitleSection
-                name="Workflows"
-                resourceType={{ type: 'workflows' }}
+                name={sceneConfigurations[Scene.Workflows].name}
+                description={sceneConfigurations[Scene.Workflows].description}
+                resourceType={{ type: sceneConfigurations[Scene.Workflows].iconType || 'default_icon_type' }}
                 actions={
                     <>
                         {currentTab === 'workflows' && (
@@ -221,7 +222,6 @@ export function WorkflowsScene(): JSX.Element {
                     </>
                 }
             />
-            <SceneDivider />
             <LemonTabs activeKey={currentTab} tabs={tabs} sceneInset />
         </SceneContent>
     )

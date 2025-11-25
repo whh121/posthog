@@ -1,7 +1,7 @@
 import { FEATURE_FLAGS } from 'lib/constants'
 import { urls } from 'scenes/urls'
 
-import { FileSystemIconType } from '~/queries/schema/schema-general'
+import { ProductKey } from '~/queries/schema/schema-general'
 
 import { FileSystemIconColor, ProductManifest } from '../../frontend/src/types'
 
@@ -17,19 +17,24 @@ export const manifest: ProductManifest = {
     treeItemsProducts: [
         {
             path: 'Web analytics',
+            intents: [ProductKey.WEB_ANALYTICS, ProductKey.MARKETING_ANALYTICS],
             category: 'Analytics',
             iconType: 'web_analytics',
             iconColor: ['var(--color-product-web-analytics-light)'] as FileSystemIconColor,
             href: urls.webAnalytics(),
+            sceneKey: 'WebAnalytics',
+            sceneKeys: ['WebAnalytics'],
         },
     ],
     treeItemsMetadata: [
         {
             path: 'Marketing settings',
             category: 'Unreleased',
-            iconType: 'marketing_settings' as FileSystemIconType,
+            iconType: 'marketing_settings',
             href: urls.marketingAnalytics(),
             flag: FEATURE_FLAGS.WEB_ANALYTICS_MARKETING,
+            sceneKey: 'WebAnalyticsMarketing',
+            sceneKeys: ['WebAnalyticsMarketing'],
         },
     ],
 }

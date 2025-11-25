@@ -18,7 +18,6 @@ class TaskDetails:
     github_integration_id: int
     repository: str
     distinct_id: str
-    workflow_id: str
 
 
 @activity.defn
@@ -28,19 +27,21 @@ def get_task_details(task_id: str) -> TaskDetails:
 
     try:
         task = Task.objects.select_related("created_by").get(id=task_id)
-    except ObjectDoesNotExist:
-        raise TaskNotFoundError(f"Task {task_id} not found", {"task_id": task_id})
+    except ObjectDoesNotExist as e:
+        raise TaskNotFoundError(f"Task {task_id} not found", {"task_id": task_id}, cause=e)
 
     if not task.github_integration_id:
         raise TaskInvalidStateError(
             f"Task {task_id} has no GitHub integration",
             {"task_id": task_id},
+            cause=RuntimeError(f"Task {task_id} missing github_integration_id"),
         )
 
     if not task.primary_repository:
         raise TaskInvalidStateError(
             f"Task {task_id} has no primary repository configured",
             {"task_id": task_id},
+            cause=RuntimeError(f"Task {task_id} missing primary_repository"),
         )
 
     repository_full_name = task.primary_repository.get("full_name")
@@ -48,23 +49,19 @@ def get_task_details(task_id: str) -> TaskDetails:
         raise TaskInvalidStateError(
             f"Task {task_id} primary repository missing full_name",
             {"task_id": task_id},
+            cause=RuntimeError(f"Task {task_id} primary_repository missing full_name field"),
         )
 
     if not task.created_by:
         raise TaskInvalidStateError(
             f"Task {task_id} has no created_by user",
             {"task_id": task_id},
+            cause=RuntimeError(f"Task {task_id} missing created_by field"),
         )
 
     assert task.created_by is not None
 
     distinct_id = task.created_by.distinct_id or "process_task_workflow"
-
-    if not task.workflow_id:
-        raise TaskInvalidStateError(
-            f"Task {task_id} has no workflow configured",
-            {"task_id": task_id},
-        )
 
     log_with_activity_context(
         "Task details retrieved successfully",
@@ -80,5 +77,4 @@ def get_task_details(task_id: str) -> TaskDetails:
         github_integration_id=task.github_integration_id,
         repository=repository_full_name,
         distinct_id=distinct_id,
-        workflow_id=str(task.workflow_id),
     )

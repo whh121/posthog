@@ -15,9 +15,10 @@ from posthog.tasks.alerts.checks import (
     reset_stuck_alerts_task,
 )
 from posthog.tasks.email import send_hog_functions_daily_digest
+from posthog.tasks.feature_flags import cleanup_stale_flags_expiry_tracking_task, refresh_expiring_flags_cache_entries
 from posthog.tasks.integrations import refresh_integrations
-from posthog.tasks.periodic_digest.periodic_digest import send_all_periodic_digest_reports
 from posthog.tasks.remote_config import sync_all_remote_configs
+from posthog.tasks.surveys import sync_all_surveys_cache
 from posthog.tasks.tasks import (
     calculate_cohort,
     calculate_decide_usage,
@@ -50,12 +51,14 @@ from posthog.tasks.tasks import (
     start_poll_query_performance,
     stop_surveys_reached_target,
     sync_all_organization_available_product_features,
+    sync_feature_flag_last_called,
     update_event_partitions,
     update_survey_adaptive_sampling,
     update_survey_iteration,
     verify_persons_data_in_sync,
 )
 from posthog.tasks.team_access_cache_tasks import warm_all_team_access_caches_task
+from posthog.tasks.team_metadata import cleanup_stale_expiry_tracking_task, refresh_expiring_team_metadata_cache_entries
 from posthog.utils import get_crontab, get_instance_region
 
 TWENTY_FOUR_HOURS = 24 * 60 * 60
@@ -112,6 +115,34 @@ def setup_periodic_tasks(sender: Celery, **kwargs: Any) -> None:
         name="warm team access caches",
     )
 
+    # Team metadata cache sync - hourly
+    sender.add_periodic_task(
+        crontab(hour="*", minute="0"),
+        refresh_expiring_team_metadata_cache_entries.s(),
+        name="team metadata cache sync",
+    )
+
+    # Team metadata expiry tracking cleanup - daily at 3 AM
+    sender.add_periodic_task(
+        crontab(hour="3", minute="0"),
+        cleanup_stale_expiry_tracking_task.s(),
+        name="team metadata expiry tracking cleanup",
+    )
+
+    # Flags cache sync - hourly
+    sender.add_periodic_task(
+        crontab(hour="*", minute="15"),
+        refresh_expiring_flags_cache_entries.s(),
+        name="refresh expiring flags cache entries",
+    )
+
+    # Flags cache expiry tracking cleanup - daily at 3:15 AM
+    sender.add_periodic_task(
+        crontab(hour="3", minute="15"),
+        cleanup_stale_flags_expiry_tracking_task.s(),
+        name="flags cache expiry tracking cleanup",
+    )
+
     # Update events table partitions twice a week
     sender.add_periodic_task(
         crontab(day_of_week="mon,fri", hour="0", minute="0"),
@@ -134,13 +165,6 @@ def setup_periodic_tasks(sender: Celery, **kwargs: Any) -> None:
             name="send delayed org usage reports",
         )
 
-    # Send all periodic digest reports
-    sender.add_periodic_task(
-        crontab(hour="9", minute="0", day_of_week="mon"),
-        send_all_periodic_digest_reports.s(),
-        name="send all weekly digest reports",
-    )
-
     # Send HogFunctions daily digest at 9:30 AM UTC (good for US and EU)
     sender.add_periodic_task(
         crontab(hour="9", minute="30"),
@@ -158,6 +182,14 @@ def setup_periodic_tasks(sender: Celery, **kwargs: Any) -> None:
         crontab(minute="*/30"),
         calculate_decide_usage.s(),
         name="calculate decide usage",
+    )
+
+    # Sync feature flag last_called_at timestamps from ClickHouse every 30 minutes
+    sender.add_periodic_task(
+        crontab(minute="*/30"),
+        sync_feature_flag_last_called.s(),
+        name="sync feature flag last_called_at timestamps",
+        expires=1800,  # 30 minutes - prevents stale tasks from running
     )
 
     # Reset master project data every Monday at Thursday at 5 AM UTC. Mon and Thu because doing this every day
@@ -369,4 +401,10 @@ def setup_periodic_tasks(sender: Celery, **kwargs: Any) -> None:
         crontab(hour="0", minute=str(randrange(0, 40))),
         sync_all_remote_configs.s(),
         name="sync all remote configs",
+    )
+
+    sender.add_periodic_task(
+        crontab(hour="0", minute=str(randrange(0, 40))),
+        sync_all_surveys_cache.s(),
+        name="sync all surveys cache",
     )

@@ -3,6 +3,7 @@ from products.links.backend.admin import LinkAdmin
 from .async_deletion_admin import AsyncDeletionAdmin
 from .batch_imports import BatchImportAdmin
 from .cohort_admin import CohortAdmin
+from .column_configuration_admin import ColumnConfigurationAdmin
 from .dashboard_admin import DashboardAdmin
 from .dashboard_template_admin import DashboardTemplateAdmin
 from .data_color_theme_admin import DataColorThemeAdmin
@@ -15,6 +16,7 @@ from .group_type_mapping_admin import GroupTypeMappingAdmin
 from .hog_function_admin import HogFunctionAdmin
 from .insight_admin import InsightAdmin
 from .instance_setting_admin import InstanceSettingAdmin
+from .oauth_admin import OAuthApplicationAdmin
 from .organization_admin import OrganizationAdmin
 from .organization_domain_admin import OrganizationDomainAdmin
 from .person_distinct_id_admin import PersonDistinctIdAdmin
@@ -31,6 +33,7 @@ __all__ = [
     "AsyncDeletionAdmin",
     "BatchImportAdmin",
     "CohortAdmin",
+    "ColumnConfigurationAdmin",
     "DashboardAdmin",
     "DashboardTemplateAdmin",
     "DataColorThemeAdmin",
@@ -44,6 +47,7 @@ __all__ = [
     "InsightAdmin",
     "InstanceSettingAdmin",
     "LinkAdmin",
+    "OAuthApplicationAdmin",
     "OrganizationAdmin",
     "OrganizationDomainAdmin",
     "PersonalAPIKeyAdmin",

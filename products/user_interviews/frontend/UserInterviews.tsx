@@ -8,14 +8,15 @@ import { PhonePairHogs } from 'lib/components/hedgehogs'
 import { LemonTableLink } from 'lib/lemon-ui/LemonTable/LemonTableLink'
 import { createdAtColumn, createdByColumn } from 'lib/lemon-ui/LemonTable/columnUtils'
 import { MaxTool } from 'scenes/max/MaxTool'
-import { SceneExport } from 'scenes/sceneTypes'
+import { Scene, SceneExport } from 'scenes/sceneTypes'
+import { sceneConfigurations } from 'scenes/scenes'
 import { urls } from 'scenes/urls'
 import { userLogic } from 'scenes/userLogic'
 
 import { SceneContent } from '~/layout/scenes/components/SceneContent'
-import { SceneDivider } from '~/layout/scenes/components/SceneDivider'
 import { SceneTitleSection } from '~/layout/scenes/components/SceneTitleSection'
-import { ProductKey, UserInterviewType } from '~/types'
+import { ProductKey } from '~/queries/schema/schema-general'
+import { UserInterviewType } from '~/types'
 
 import { userInterviewsLogic } from './userInterviewsLogic'
 
@@ -31,12 +32,12 @@ export function UserInterviews(): JSX.Element {
     return (
         <SceneContent>
             <SceneTitleSection
-                name="User interviews"
+                name={sceneConfigurations[Scene.UserInterviews].name}
+                description={sceneConfigurations[Scene.UserInterviews].description}
                 resourceType={{
-                    type: 'user_interview',
+                    type: sceneConfigurations[Scene.UserInterviews].iconType || 'default_icon_type',
                 }}
             />
-            <SceneDivider />
             <ProductIntroduction
                 productName="User interviews"
                 productKey={ProductKey.USER_INTERVIEWS}

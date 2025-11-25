@@ -9,6 +9,7 @@ def register_all_admin():
         AsyncDeletionAdmin,
         BatchImportAdmin,
         CohortAdmin,
+        ColumnConfigurationAdmin,
         DashboardAdmin,
         DashboardTemplateAdmin,
         DataColorThemeAdmin,
@@ -22,6 +23,7 @@ def register_all_admin():
         InsightAdmin,
         InstanceSettingAdmin,
         LinkAdmin,
+        OAuthApplicationAdmin,
         OrganizationAdmin,
         OrganizationDomainAdmin,
         PersonalAPIKeyAdmin,
@@ -38,6 +40,7 @@ def register_all_admin():
         AsyncDeletion,
         BatchImport,
         Cohort,
+        ColumnConfiguration,
         Dashboard,
         DashboardTemplate,
         DataColorTheme,
@@ -63,7 +66,10 @@ def register_all_admin():
         Text,
         User,
     )
+    from posthog.models.oauth import OAuthApplication
 
+    from products.desktop_recordings.backend.admin import DesktopRecordingAdmin
+    from products.desktop_recordings.backend.models import DesktopRecording
     from products.tasks.backend.admin import SandboxSnapshotAdmin
     from products.tasks.backend.models import SandboxSnapshot
 
@@ -90,6 +96,7 @@ def register_all_admin():
     admin.site.register(Text, TextAdmin)
 
     admin.site.register(Cohort, CohortAdmin)
+    admin.site.register(ColumnConfiguration, ColumnConfigurationAdmin)
     admin.site.register(PersonDistinctId, PersonDistinctIdAdmin)
 
     admin.site.register(Survey, SurveyAdmin)
@@ -101,5 +108,7 @@ def register_all_admin():
     admin.site.register(BatchImport, BatchImportAdmin)
 
     admin.site.register(PersonalAPIKey, PersonalAPIKeyAdmin)
+    admin.site.register(OAuthApplication, OAuthApplicationAdmin)
 
     admin.site.register(SandboxSnapshot, SandboxSnapshotAdmin)
+    admin.site.register(DesktopRecording, DesktopRecordingAdmin)

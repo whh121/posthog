@@ -1,6 +1,8 @@
 import { FEATURE_FLAGS } from 'lib/constants'
 import { urls } from 'scenes/urls'
 
+import { ProductKey } from '~/queries/schema/schema-general'
+
 import { FileSystemIconColor, ProductManifest } from '../../frontend/src/types'
 
 export const manifest: ProductManifest = {
@@ -11,6 +13,8 @@ export const manifest: ProductManifest = {
             import: () => import('./frontend/UserInterviews'),
             projectBased: true,
             activityScope: 'UserInterview',
+            description: 'Record and analyze user interviews with PostHog.',
+            iconType: 'user_interview',
         },
         UserInterview: {
             name: 'User interview',
@@ -40,6 +44,7 @@ export const manifest: ProductManifest = {
     treeItemsProducts: [
         {
             path: 'User interviews',
+            intents: [ProductKey.USER_INTERVIEWS],
             category: 'Unreleased',
             href: urls.userInterviews(),
             type: 'user_interview',
@@ -47,6 +52,7 @@ export const manifest: ProductManifest = {
             tags: ['alpha'],
             iconType: 'user_interview',
             iconColor: ['var(--color-product-user-interviews-light)'] as FileSystemIconColor,
+            sceneKey: 'UserInterviews',
         },
     ],
 }

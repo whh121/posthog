@@ -1,5 +1,6 @@
 import { v4 as uuidv4 } from 'uuid'
 import { z } from 'zod'
+
 import { FeatureFlagSchema } from './flags'
 import {
     ExperimentCreateSchema as ToolExperimentCreateSchema,
@@ -235,6 +236,13 @@ export const ExperimentUpdateApiPayloadSchema = ExperimentSchema.omit({
 export type ExperimentUpdateApiPayload = z.infer<typeof ExperimentUpdateApiPayloadSchema>
 
 /**
+ * Helper to conditionally add properties only if they exist and are not empty
+ */
+const getPropertiesIfNotEmpty = <T>(props: T): { properties?: T } => {
+    return props && Object.keys(props).length > 0 ? { properties: props } : {}
+}
+
+/**
  * Transform tool input metrics to ExperimentMetric format for API
  */
 const transformMetricToApi = (metric: any): z.infer<typeof ExperimentMetricSchema> => {
@@ -253,7 +261,7 @@ const transformMetricToApi = (metric: any): z.infer<typeof ExperimentMetricSchem
                 source: {
                     kind: 'EventsNode',
                     event: metric.event_name,
-                    properties: metric.properties || {},
+                    ...getPropertiesIfNotEmpty(metric.properties),
                 },
             }
 
@@ -264,25 +272,29 @@ const transformMetricToApi = (metric: any): z.infer<typeof ExperimentMetricSchem
                 series: (metric.funnel_steps || [metric.event_name]).map((event: string) => ({
                     kind: 'EventsNode',
                     event,
-                    properties: metric.properties || {},
+                    ...getPropertiesIfNotEmpty(metric.properties),
                 })),
             }
 
-        case 'ratio':
+        case 'ratio': {
+            const numeratorProps = metric.properties?.numerator || metric.properties
+            const denominatorProps = metric.properties?.denominator || metric.properties
+
             return {
                 ...base,
                 metric_type: 'ratio',
                 numerator: {
                     kind: 'EventsNode',
                     event: metric.event_name,
-                    properties: metric.properties?.numerator || metric.properties || {},
+                    ...getPropertiesIfNotEmpty(numeratorProps),
                 },
                 denominator: {
                     kind: 'EventsNode',
                     event: metric.properties?.denominator_event || metric.event_name,
-                    properties: metric.properties?.denominator || metric.properties || {},
+                    ...getPropertiesIfNotEmpty(denominatorProps),
                 },
             }
+        }
 
         default:
             throw new Error(`Unknown metric type: ${metric.metric_type}`)
@@ -354,67 +366,61 @@ export type ExperimentCreatePayload = z.output<typeof ExperimentCreatePayloadSch
  * Transform user-friendly update input to API payload format for experiment updates
  * This handles partial updates with the same transformation patterns as creation
  */
-export const ExperimentUpdateTransformSchema = ToolExperimentUpdateInputSchema.transform(
-    (input) => {
-        const updatePayload: Record<string, any> = {}
+export const ExperimentUpdateTransformSchema = ToolExperimentUpdateInputSchema.transform((input) => {
+    const updatePayload: Record<string, any> = {}
 
-        // Basic fields - direct mapping
-        if (input.name !== undefined) {
-            updatePayload.name = input.name
-        }
-        if (input.description !== undefined) {
-            updatePayload.description = input.description
-        }
-
-        // Transform metrics if provided
-        if (input.primary_metrics !== undefined) {
-            updatePayload.metrics = input.primary_metrics.map(transformMetricToApi)
-            updatePayload.primary_metrics_ordered_uuids = updatePayload.metrics.map(
-                (m: any) => m.uuid!
-            )
-        }
-
-        if (input.secondary_metrics !== undefined) {
-            updatePayload.metrics_secondary = input.secondary_metrics.map(transformMetricToApi)
-            updatePayload.secondary_metrics_ordered_uuids = updatePayload.metrics_secondary.map(
-                (m: any) => m.uuid!
-            )
-        }
-
-        // Transform minimum detectable effect into parameters
-        if (input.minimum_detectable_effect !== undefined) {
-            updatePayload.parameters = {
-                ...updatePayload.parameters,
-                minimum_detectable_effect: input.minimum_detectable_effect,
-            }
-        }
-
-        // Handle experiment state management
-        if (input.launch === true) {
-            updatePayload.start_date = new Date().toISOString()
-        }
-
-        if (input.conclude !== undefined) {
-            updatePayload.conclusion = input.conclude
-            updatePayload.end_date = new Date().toISOString()
-            if (input.conclusion_comment !== undefined) {
-                updatePayload.conclusion_comment = input.conclusion_comment
-            }
-        }
-
-        if (input.restart === true) {
-            updatePayload.end_date = null
-            updatePayload.conclusion = null
-            updatePayload.conclusion_comment = null
-        }
-
-        if (input.archive !== undefined) {
-            updatePayload.archived = input.archive
-        }
-
-        return updatePayload
+    // Basic fields - direct mapping
+    if (input.name !== undefined) {
+        updatePayload.name = input.name
     }
-).pipe(ExperimentUpdateApiPayloadSchema)
+    if (input.description !== undefined) {
+        updatePayload.description = input.description
+    }
+
+    // Transform metrics if provided
+    if (input.primary_metrics !== undefined) {
+        updatePayload.metrics = input.primary_metrics.map(transformMetricToApi)
+        updatePayload.primary_metrics_ordered_uuids = updatePayload.metrics.map((m: any) => m.uuid!)
+    }
+
+    if (input.secondary_metrics !== undefined) {
+        updatePayload.metrics_secondary = input.secondary_metrics.map(transformMetricToApi)
+        updatePayload.secondary_metrics_ordered_uuids = updatePayload.metrics_secondary.map((m: any) => m.uuid!)
+    }
+
+    // Transform minimum detectable effect into parameters
+    if (input.minimum_detectable_effect !== undefined) {
+        updatePayload.parameters = {
+            ...updatePayload.parameters,
+            minimum_detectable_effect: input.minimum_detectable_effect,
+        }
+    }
+
+    // Handle experiment state management
+    if (input.launch === true) {
+        updatePayload.start_date = new Date().toISOString()
+    }
+
+    if (input.conclude !== undefined) {
+        updatePayload.conclusion = input.conclude
+        updatePayload.end_date = new Date().toISOString()
+        if (input.conclusion_comment !== undefined) {
+            updatePayload.conclusion_comment = input.conclusion_comment
+        }
+    }
+
+    if (input.restart === true) {
+        updatePayload.end_date = null
+        updatePayload.conclusion = null
+        updatePayload.conclusion_comment = null
+    }
+
+    if (input.archive !== undefined) {
+        updatePayload.archived = input.archive
+    }
+
+    return updatePayload
+}).pipe(ExperimentUpdateApiPayloadSchema)
 
 export type ExperimentUpdateTransform = z.output<typeof ExperimentUpdateTransformSchema>
 

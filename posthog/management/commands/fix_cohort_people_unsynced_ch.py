@@ -5,6 +5,7 @@ import structlog
 
 from posthog.clickhouse.client import sync_execute
 from posthog.models.cohort.cohort import Cohort
+from posthog.models.person import Person
 
 logger = structlog.get_logger(__name__)
 
@@ -118,8 +119,9 @@ class Command(BaseCommand):
 
                 # Get person ID mappings from persons database for this batch
                 person_uuid_to_id = {}
+                person_table = Person._meta.db_table
                 with person_connection.cursor() as cursor:
-                    cursor.execute("SELECT uuid, id FROM posthog_person WHERE uuid = ANY(%s)", [ch_person_uuids])
+                    cursor.execute(f"SELECT uuid, id FROM {person_table} WHERE uuid = ANY(%s)", [ch_person_uuids])
                     for uuid, person_id in cursor.fetchall():
                         person_uuid_to_id[str(uuid)] = person_id
 
@@ -177,12 +179,13 @@ class Command(BaseCommand):
                                 cohort_to_uuids[cohort_id].append(uuid)
 
                         batch_inserted = 0
-                        team_id = clickhouse_batch[0][2]  # Get team_id from first record
 
                         for cohort_id, person_uuids in cohort_to_uuids.items():
                             try:
                                 cohort = Cohort.objects.get(id=cohort_id)
-                                cohort.insert_users_list_by_uuid_into_pg_only(items=person_uuids, team_id=team_id)
+                                cohort.insert_users_list_by_uuid_into_pg_only(
+                                    items=person_uuids, team_id=cohort.team_id
+                                )
                                 batch_inserted += len(person_uuids)
                             except Exception as e:
                                 self.stdout.write(self.style.ERROR(f"Error inserting into cohort {cohort_id}: {e}"))

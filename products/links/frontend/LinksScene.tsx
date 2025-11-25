@@ -10,13 +10,14 @@ import { LemonMenuOverlay } from 'lib/lemon-ui/LemonMenu/LemonMenu'
 import { LemonTableLink } from 'lib/lemon-ui/LemonTable/LemonTableLink'
 import { createdAtColumn, createdByColumn } from 'lib/lemon-ui/LemonTable/columnUtils'
 import stringWithWBR from 'lib/utils/stringWithWBR'
-import { SceneExport } from 'scenes/sceneTypes'
+import { Scene, SceneExport } from 'scenes/sceneTypes'
+import { sceneConfigurations } from 'scenes/scenes'
 import { urls } from 'scenes/urls'
 
 import { SceneContent } from '~/layout/scenes/components/SceneContent'
-import { SceneDivider } from '~/layout/scenes/components/SceneDivider'
 import { SceneTitleSection } from '~/layout/scenes/components/SceneTitleSection'
-import { LinkType, ProductKey } from '~/types'
+import { ProductKey } from '~/queries/schema/schema-general'
+import { LinkType } from '~/types'
 
 import { LinkMetricSparkline } from './LinkMetricSparkline'
 import { linksLogic } from './linksLogic'
@@ -95,10 +96,10 @@ export function LinksScene(): JSX.Element {
     return (
         <SceneContent>
             <SceneTitleSection
-                name="Links"
-                description="Start creating links for your marketing campaigns, referral programs, and more."
+                name={sceneConfigurations[Scene.Links].name}
+                description={sceneConfigurations[Scene.Links].description}
                 resourceType={{
-                    type: 'link',
+                    type: sceneConfigurations[Scene.Links].iconType || 'default_icon_type',
                 }}
                 actions={
                     <LemonButton
@@ -129,9 +130,8 @@ export function LinksScene(): JSX.Element {
                     </LemonButton>
                 }
             />
-            <SceneDivider />
 
-            <LemonBanner type="error" className="mb-2">
+            <LemonBanner type="error">
                 <h2>Links are extremely WIP</h2>
                 <p>
                     Links were started on the Tulum 2025 hackathon, and are not currently in use. The UI and Django
@@ -149,6 +149,7 @@ export function LinksScene(): JSX.Element {
                 description="Start creating links for your marketing campaigns, referral programs, and more."
                 action={() => router.actions.push(urls.link('new'))}
                 docsURL="https://posthog.com/docs/links"
+                className="my-0"
             />
 
             {!shouldShowEmptyState && <LemonTable loading={linksLoading} columns={columns} dataSource={links} />}
